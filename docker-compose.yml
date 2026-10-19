@@ -1,0 +1,20 @@
+services:
+  clickhouse:
+    image: clickhouse/clickhouse-server:latest
+    container_name: stream-etl-clickhouse
+    ports:
+      - "8123:8123" # HTTP
+      - "9000:9000" # native
+    environment:
+      CLICKHOUSE_DB: ${CLICKHOUSE_DB:-logs}
+      CLICKHOUSE_USER: ${CLICKHOUSE_USER:-default}
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD:-clickhouse}
+      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: 1
+    volumes:
+      - clickhouse_data:/var/lib/clickhouse
+      - clickhouse_logs:/var/log/clickhouse-server
+    restart: unless-stopped
+
+volumes:
+  clickhouse_data:
+  clickhouse_logs:
