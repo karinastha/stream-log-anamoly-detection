@@ -1,17 +1,33 @@
 [project]
-name = "stream-etl"
+name = "stream-log-anamoly-detection"
 version = "0.1.0"
-description = "Add your description here"
+description = "Streaming ETL and anomaly detection for log analytics"
 readme = "README.md"
 authors = [
     { name = "karinastha", email = "karinashrestha19@gmail.com" }
 ]
 requires-python = ">=3.11"
-dependencies = []
+dependencies = [
+    "clickhouse-connect>=0.8",
+    "joblib>=1.4",
+    "numpy>=1.26",
+    "pandas>=2.2",
+    "python-dotenv>=1.0",
+    "requests>=2.31",
+    "scikit-learn~=1.9.1",  # the model was pickled with 1.9.1
+    "streamlit>=1.50",
+]
+
+[dependency-groups]
+dev = ["pytest>=8"]
 
 [project.scripts]
-stream-etl = "stream_etl:main"
+app = "stream_log_anamoly_detection:main"
 
 [build-system]
 requires = ["uv_build>=0.12.12,<0.13.0"]
 build-backend = "uv_build"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
