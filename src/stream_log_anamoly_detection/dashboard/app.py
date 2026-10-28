@@ -20,6 +20,7 @@ from stream_log_anamoly_detection.storage import get_client
 st.set_page_config(page_title="Security log ETL", page_icon=":material/shield:", layout="wide",
                    initial_sidebar_state="collapsed")
 settings = Settings.from_env()
+theme.init()
 theme.inject()
 
 LIVE_WITHIN_SECONDS = 30
@@ -197,10 +198,10 @@ def _render(window_label: str, refresh_seconds: int | None) -> None:
         ui.kpi("Source stream", "Streaming" if streaming else "Stopped" if source else "Unreachable",
                f"{source['eps']} events/s configured" if source else settings.api_url, "ok" if streaming else "bad"),
         ui.kpi("Throughput", f"{eps:,.1f}/s", f"avg over the last {LIVE_WITHIN_SECONDS}s", "ok" if live else "",
-               series["events"].tolist() if not series.empty else None, "#818cf8"),
+               series["events"].tolist() if not series.empty else None, "var(--accent)"),
         ui.kpi("Events loaded", f"{events:,}", f"{int(totals['sources']):,} distinct source IPs"),
         ui.kpi("Anomalies", f"{anomalies:,}", f"{anomalies / events:.2%} of events" if events else "",
-               "bad" if anomalies else "", series["anomalies"].tolist() if not series.empty else None, "#ff4d6d"),
+               "bad" if anomalies else "", series["anomalies"].tolist() if not series.empty else None, "var(--crit)"),
         ui.kpi("Rejected", f"{rejected:,}", "failed validation", "warn" if rejected else ""),
     ]))
 
@@ -259,10 +260,7 @@ def _render(window_label: str, refresh_seconds: int | None) -> None:
         left, right = st.columns([2, 3], gap="medium")
         with left, _panel("Top alerting sources", "Source IPs with the most flagged events, with their strongest model score."):
             top = queries.top_alert_sources(since)
-            if top.empty:
-                st.html(ui.empty("No anomalies in this window."))
-            else:
-                st.dataframe(top, hide_index=True, width="stretch")
+            st.html(ui.table(top, mono=("source_ip",), empty_text="No anomalies in this window."))
         with right, _panel("Latest alerts", "Most recently flagged events, newest first."):
             st.html(ui.feed(queries.recent_alerts(since), "No anomalies in this window.", fresh_seconds=fresh))
 
@@ -308,10 +306,15 @@ def _render(window_label: str, refresh_seconds: int | None) -> None:
             st.html(ui.rejected_list(queries.recent_rejected(since)))
 
 
-st.html(ui.brand_header("Security Log ETL", "Streaming ETL and anomaly detection | SOC view", [
+head, switch = st.columns([10, 1.7], gap="medium", vertical_alignment="center")
+head.html(ui.brand_header("Security Log ETL", "Streaming ETL and anomaly detection | SOC view", [
     ("server", f"ClickHouse {settings.clickhouse_host}:{settings.clickhouse_port}/{settings.clickhouse_db}"),
     ("activity", f"Source {settings.api_url}"),
 ]))
+light = theme.mode() == "light"
+switch.button("Dark mode" if light else "Light mode", key="theme_toggle", on_click=theme.toggle, width="stretch",
+              icon=":material/dark_mode:" if light else ":material/light_mode:",
+              help="Switch to the dark theme" if light else "Switch to the light theme")
 
 with st.container(border=True):
     c_window, c_live, c_interval, c_refresh = st.columns([2.2, 1.3, 2.6, 1.2], gap="medium", vertical_alignment="bottom")

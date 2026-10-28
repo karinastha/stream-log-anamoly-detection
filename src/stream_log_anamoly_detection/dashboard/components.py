@@ -1,6 +1,7 @@
 """HTML snippets for the dashboard. Log content is untrusted, so every dynamic value goes through esc()."""
 
 import html
+import numbers
 from collections.abc import Iterable, Sequence
 
 import pandas as pd
@@ -64,7 +65,7 @@ def sparkline(values: Sequence[float], color: str, bars: int = 28) -> str:
     return f'<div class="sl-spark" style="--c:{color}">{cells}</div>'
 
 
-def kpi(label: str, value: str, sub: str = "", tone: str = "", series: Sequence[float] | None = None, color: str = "#818cf8") -> str:
+def kpi(label: str, value: str, sub: str = "", tone: str = "", series: Sequence[float] | None = None, color: str = "var(--accent)") -> str:
     sub_html = f'<div class="sl-kpi-sub">{esc(sub)}</div>' if sub else ""
     spark = sparkline(list(series), color) if series is not None else ""
     return (
@@ -155,6 +156,22 @@ def feed(df: pd.DataFrame, empty_text: str = "No events in this window.", fresh_
             f'<span title="{esc(r.message)}">{esc(r.message)}</span><span class="score">{r.anomaly_score:.2f}</span></div>'
         )
     return f'<div class="sl-feed">{"".join(rows)}</div>'
+
+
+def table(df: pd.DataFrame, mono: Sequence[str] = (), empty_text: str = "No data.") -> str:
+    """Plain HTML table so it follows the light/dark theme (native dataframes cannot)."""
+    if df.empty:
+        return empty(empty_text)
+    head = "".join(f"<th>{esc(c)}</th>" for c in df.columns)
+    rows = []
+    for record in df.itertuples(index=False):
+        cells = []
+        for column, value in zip(df.columns, record):
+            number = isinstance(value, numbers.Real) and not isinstance(value, bool)
+            text = f"{value:,}" if isinstance(value, numbers.Integral) else f"{value:,.3g}" if number else value
+            cells.append(f'<td class="{"mono" if column in mono else "num" if number else ""}">{esc(text)}</td>')
+        rows.append(f"<tr>{''.join(cells)}</tr>")
+    return f'<div class="sl-table-wrap"><table class="sl-table"><thead><tr>{head}</tr></thead><tbody>{"".join(rows)}</tbody></table></div>'
 
 
 def rejected_list(df: pd.DataFrame) -> str:
